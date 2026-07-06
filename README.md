@@ -50,7 +50,7 @@ Chrome extension to detokenize Salesforce GDPR tokens directly from Splunk logs 
 
 The extension is configured to work with:
 - Splunk URL: `https://splunk-web.log-analytics.monitoring.aws-esvc1-useast2.aws.sfdc.cl/*`
-- BlackTab Detokenizer: Salesforce internal tool
+- Data Privacy Tokenizer: Salesforce internal tool
 
 ## Development
 
