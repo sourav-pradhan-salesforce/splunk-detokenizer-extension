@@ -12,8 +12,8 @@
   const TOKEN_PATTERN = /A-[^\s`<>'"]+/g;
 
   // Tooltip timing constants
-  const TOOLTIP_SHOW_DELAY = 2000;  // 2 seconds before showing tooltip
-  const TOOLTIP_HIDE_DELAY = 2000;  // 2 seconds before hiding tooltip
+  const TOOLTIP_SHOW_DELAY = 1500;  // 1.5 seconds before showing tooltip
+  const TOOLTIP_HIDE_DELAY = 300;   // 300ms before hiding tooltip (quick hide when mouse leaves)
 
   let hoverTooltip = null;
   let currentHoveredToken = null;
@@ -23,6 +23,7 @@
   let isHoveringTooltip = false;
   let isHoveringToken = false;
   let pendingToken = null;
+  let hasMouseMovedSincePageLoad = false;
 
   // Initialize the extension
   function init() {
@@ -1099,8 +1100,35 @@
     document.addEventListener('click', handleTooltipClick);
   }
 
+  // Check if token already displayed in detokenizer panel
+  function isTokenAlreadyDisplayed(token) {
+    if (!detokenizerPanel || detokenizerPanel.classList.contains('hidden')) {
+      return false;
+    }
+
+    // Check if panel has result section visible
+    const resultSection = detokenizerPanel.querySelector('.detokenizer-result-section');
+    if (!resultSection || resultSection.classList.contains('hidden')) {
+      return false;
+    }
+
+    // Check if input field contains this token
+    const tokenInput = document.getElementById('token-input');
+    if (tokenInput && tokenInput.value.includes(token)) {
+      return true;
+    }
+
+    return false;
+  }
+
   // Handle mouse movement to detect tokens
   function handleMouseMove(e) {
+    // Mark that mouse has moved (ignore tooltips on initial page load)
+    if (!hasMouseMovedSincePageLoad) {
+      hasMouseMovedSincePageLoad = true;
+      return; // Skip first movement to avoid showing tooltip for static mouse position
+    }
+
     // Check if hovering over tooltip
     if (e.target.closest('.detokenizer-tooltip')) {
       isHoveringTooltip = true;
@@ -1125,6 +1153,13 @@
       return;
     }
 
+    // Double-check: skip if element is inside panel (safety check)
+    if (element.closest('.detokenizer-panel')) {
+      isHoveringToken = false;
+      scheduleTooltipHide();
+      return;
+    }
+
     // Find parent .raw-event container (Splunk event row)
     const rawEventContainer = element.closest('.raw-event') || element.closest('td.event');
     if (!rawEventContainer) {
@@ -1139,10 +1174,18 @@
       }
 
       if (foundToken) {
+        // Check if token already displayed in panel
+        if (isTokenAlreadyDisplayed(foundToken)) {
+          isHoveringToken = false;
+          clearTooltipShowTimeout();
+          scheduleTooltipHide();
+          return;
+        }
+
         isHoveringToken = true;
         clearTooltipHideTimeout();
 
-        // If it's a different token, schedule showing it after 2 seconds
+        // If it's a different token, schedule showing it after delay
         if (foundToken !== currentHoveredToken && foundToken !== pendingToken) {
           clearTooltipShowTimeout();
           // Use viewport coordinates directly for fixed positioning
@@ -1211,10 +1254,18 @@
 
     // Only mark as hovering if we found a token AND the mouse is over token text
     if (foundToken && isActuallyOverToken) {
+      // Check if token already displayed in panel
+      if (isTokenAlreadyDisplayed(foundToken)) {
+        isHoveringToken = false;
+        clearTooltipShowTimeout();
+        scheduleTooltipHide();
+        return;
+      }
+
       isHoveringToken = true;
       clearTooltipHideTimeout();
 
-      // If it's a different token, schedule showing it after 2 seconds
+      // If it's a different token, schedule showing it after delay
       if (foundToken !== currentHoveredToken && foundToken !== pendingToken) {
         clearTooltipShowTimeout();
         // Use viewport coordinates directly for fixed positioning
