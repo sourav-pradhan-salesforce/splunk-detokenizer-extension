@@ -295,9 +295,10 @@ async function detokenizeWithTab(token) {
               if (resultsMatch) {
                 // Verify it has actual content, not just buttons/headers
                 const content = resultsMatch[0];
-                // Look for @ symbol (email) or substantial text content
-                if (content.includes('@') || content.match(/<td[^>]*>[^<]{10,}<\/td>/)) {
-                  return true; // Results with data
+                // Look for email in actual results table (not just anywhere on page)
+                // Check for email inside <td class="dataCell"> tags
+                if (content.match(/<td[^>]*class="dataCell"[^>]*>[\s\S]*?@[\s\S]*?<\/td>/i)) {
+                  return true; // Results with email in table cell
                 }
               }
 
@@ -316,7 +317,7 @@ async function detokenizeWithTab(token) {
           console.warn('⚠️ Results not detected after 20s, attempting extraction anyway');
         }
 
-        await sleep(500); // Brief wait for final render
+        await sleep(1500); // Wait for final render (increased from 500ms)
 
         // Extract result
         const resultScript = await chrome.scripting.executeScript({
