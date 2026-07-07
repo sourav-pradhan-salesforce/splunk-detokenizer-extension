@@ -361,9 +361,10 @@ async function detokenizeWithTab(token) {
 
             // Look in Results table after "Unique Run ID"
             // Search HTML first (has better structure), fallback to text
-            let resultsSection = bodyHTML.match(/Unique Run ID[\s\S]{0,3000}/i);
+            // Increased range to capture full Results table
+            let resultsSection = bodyHTML.match(/Unique Run ID[\s\S]{0,10000}/i);
             if (!resultsSection) {
-              resultsSection = bodyText.match(/Unique Run ID[\s\S]{0,2000}/i);
+              resultsSection = bodyText.match(/Unique Run ID[\s\S]{0,5000}/i);
             }
             console.log('Results section found:', !!resultsSection);
             if (resultsSection) {
@@ -380,10 +381,10 @@ async function detokenizeWithTab(token) {
                 return { value: result };
               }
 
-              // 2. Look for "noreply=" pattern (but not if it's a relay address)
+              // 2. Look for "noreply=" pattern (keep full value including noreply=)
               emailMatch = resultText.match(/noreply=([\w.-]+@[\w.-]+\.\w+)/i);
-              if (emailMatch && emailMatch[1] && !emailMatch[1].includes('salesforce.com')) {
-                const result = emailMatch[1];
+              if (emailMatch && emailMatch[0]) {
+                const result = emailMatch[0]; // Keep full match including "noreply="
                 console.log('Found result (noreply= pattern):', result);
                 return { value: result };
               }
@@ -396,6 +397,13 @@ async function detokenizeWithTab(token) {
                   // Clean email - strip any non-email characters
                   const cleanEmail = nonSalesforceEmail.match(/([\w.-]+@[\w.-]+\.\w+)/)[0];
                   console.log('Found result (non-salesforce email):', cleanEmail);
+                  return { value: cleanEmail };
+                }
+
+                // 3b. If only salesforce.com emails found, accept first one
+                if (allEmails.length > 0) {
+                  const cleanEmail = allEmails[0].match(/([\w.-]+@[\w.-]+\.\w+)/)[0];
+                  console.log('Found result (salesforce email):', cleanEmail);
                   return { value: cleanEmail };
                 }
               }
