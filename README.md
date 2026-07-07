@@ -56,16 +56,6 @@ The extension is configured to work with:
 
 See `docs/` folder for detailed development documentation.
 
-## Team
-
-Made with ❤️ by **Team Ashish**
-
-For feedback, reach out to:
-- @ashishsharma
-- @souravpradhan
-- @ramkrishan
-- @sriharshachagarlamudi
-
 ## Version
 
 Current version: 1.0.0
